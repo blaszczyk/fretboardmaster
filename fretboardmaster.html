@@ -1,0 +1,146 @@
+<html>
+	<head>
+		<title>Fret Board Master</title>
+		<link rel="shortcut icon" type="image/png" href="https://www.iconfinder.com/icons/46060/download/png/16"/>
+		<style>
+			body {
+				background-image: url("https://wallpapercave.com/wp/j4S6fkF.jpg");
+				background-size:cover;
+				background-repeat:no-repeat;
+				background-position:center center;
+			}
+			h1 {
+				font-size:56px;
+				color:#0099BB;
+				margin-top:100px;
+				margin-bottom:130px;
+			}
+			select {
+				font-size:24px;
+			}
+			textarea {
+				font-size:20px;
+				margin-top:30px;
+			}
+		</style>
+		<script>
+			var tones = ['C','C#','D','D#','E','F','F#','G','G#','A','B','H'];
+			var scaleTypes = {
+				'PentaMajor' : [0,2,4,7,9],
+				'PentaMinor' : [0,3,5,7,10],
+				'DiaMajor' : [0,2,4,5,7,9,11],
+				'DiaMinor' : [0,2,3,5,7,8,10],
+				'ChordMajor' : [0,4,7],
+				'ChordMinor' : [0,3,7],
+				'ChordPower' : [0,7],
+				'BaseTone' : [0]
+			};
+			var instruments = {
+				'Guitar' : {
+					tune : [4,11,7,2,9,4],
+					fretCount : 22
+				},
+				'Bass' : {
+					tune : [7,2,9,4],
+					fretCount : 23
+				},
+				'Ukulele' : {
+					tune : [11,6,2,9],
+					fretCount : 14
+				}
+			};
+			
+			var atom = '--|---';
+			var apex = '---';
+			
+			function drawFretBoard() {
+				instrument = instruments[$('instrument').value];
+				fretCount =  instrument.fretCount;
+				tune = instrument.tune;
+				
+				$('fretBoard').cols = fretCount * atom.length + apex.length;
+				$('fretBoard').rows = tune.length + 2;
+				$('fretBoard').value = createFretBoard(fretCount, tune);
+			};
+			
+			function createFretBoard(fretCount, tune) {
+				fretPattern = createFretPattern(fretCount);
+				marks = createMarks(fretCount);
+				
+				fretBoard = marks + '\r\n';
+				tune.forEach(note => fretBoard += string(fretPattern, note) + '\r\n');
+				fretBoard += marks;
+				return fretBoard;
+			};
+			
+			function string(fretPattern, note) {
+				return fretPattern.substring(atom.length * note, atom.length * (note + fretCount)).replace(/(?<=^[^|]*)-/g,' ') + apex;
+			};
+			
+			function createFretPattern(fretCount) {
+				scale = createScale();
+				fretPattern = '';
+				tones.forEach(tone => fretPattern += fret(scale, tone));
+				return fretPattern.repeat(fretCount / 12 + 2);
+			};
+			
+			function fret(scale, tone) {
+				return scale.includes(tones.indexOf(tone)) ? tone + atom.substring(tone.length) : atom;
+			};
+			
+			function createScale() {
+				baseTone = tones.indexOf($('baseTone').value);
+				scaleType = scaleTypes[$('scaleType').value];
+				scale = [];
+				scaleType.forEach(tone => scale.push( (tone + baseTone) % 12 ));
+				return scale;
+			};
+			
+			function createMarks(fretCount) {
+				blank = atom.replace(/./g, ' ');
+				marks = '';
+				for(i = 0; i < fretCount; i++)
+					marks += mark(i) + blank.substring(mark(i).length);
+				return marks;
+			};
+			
+			function mark(i) {
+				if([3,5,7,9].includes(i%12))
+					return '*';
+				if(i%12 == 0 && i > 0)
+					return '**';
+				return '';
+			};
+			
+			function initSelect(id, values) {
+				if(!(values instanceof Array))
+					values = Object.keys(values);
+				values.forEach(value => $(id).innerHTML += '<option value="{}">{}</option>'.replace(/{}/g, value));
+				$(id).onchange = drawFretBoard;
+			};
+			
+			function $(id) {
+				return document.getElementById(id);
+			};
+			
+			function init() {
+				initSelect('instrument', instruments);
+				initSelect('baseTone', tones);
+				initSelect('scaleType', scaleTypes);
+				drawFretBoard();
+			};
+			
+			window.onload = init;
+		</script>
+	</head>
+	<body>
+		<center>
+			<h1>Fret Board Master</h1>
+			<select id="instrument"></select>
+			<select id="baseTone"></select>
+			<select id="scaleType"></select>
+			<br/>
+			<textarea id="fretBoard" readonly></textarea>
+		</center>
+	</body>
+</html>
